@@ -1,0 +1,22 @@
+UE 1 CM: 9h, TD 15h, TP 30h
+UE 2: CM: 9h, TD 15h, TP: 30h
+UE 3 CM 6h, TD 4.5h, TP: 9h
+UE 4 CM 12h, TD 15h, TP: 30h
+
+*Enseignant AB*
+UE 1: CM: 9h, TD 15h, TP: 0h
+UE 2: CM 9h, TD 0h, TP: 0h
+UE 3 CM 9h, TD 0h, TP 0h
+;
+
+*Enseignant CD*
+UE 4 CM 12h, TD 15h, TP: 30h
+;
+
+*Vacataire EF*
+UE 2 CM 0h, TD 15h, TP 30h
+;
+
+*Vacataire GH*
+UE 3 CM 0h, TD 4.5h, TP: 4.5h
+;

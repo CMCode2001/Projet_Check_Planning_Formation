@@ -1,0 +1,9 @@
+Flex (Lexer) : Il lit le fichier caractère par caractère. S'il voit 9h, il renvoie un nombre 9.0. S'il voit *Enseignant AB*, il le reconnaît comme le début d'un bloc enseignant.
+-----------------------------------------------
+
+Bison (Parser) :Il s'assure d'abord que toutes les UEs sont déclarées en haut du fichier. 
+    - Il stocke les besoins horaires dans tab_ues (Heures Prévues)10.
+    - Ensuite, il traite chaque bloc enseignant. À chaque ligne UE X ..., il calcule l'équivalent TD selon la formule $1h CM = 1.5h EqTD$ 11 et ajoute ce total au compteur de l'enseignant.Simultanément, il ajoute ces heures au compteur "Assuré" de l'UE correspondante.
+-----------------------------------------------
+
+Rapport : À la fin du fichier, la fonction check_resultats parcourt le tableau. Si heures_prevues - heures_assurees != 0, elle signale un manque ou un excès12.
