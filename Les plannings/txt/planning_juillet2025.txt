@@ -1,0 +1,44 @@
+UE 1: CM 10h, TD 8h, TP 14h
+UE 2: CM 12h, TD 10h, TP 18h
+UE 3: CM 6h, TD 6h, TP 10h
+UE 4: CM 14h, TD 12h, TP 25h
+UE 5: CM 8h, TD 10h, TP 15h
+UE 6: CM 7h, TD 9h, TP 10h
+UE 7: CM 9h, TD 14h, TP 20h
+UE 8: CM 5h, TD 8h, TP 10h
+
+
+*Amadou MBAYE*
+UE 1: CM 6h, TD 4h, TP 7h
+UE 4: CM 14h, TD 12h, TP 25h
+;
+
+
+*Idrissa GAYE*
+UE 1: CM 4h, TD 4h, TP 7h
+UE 5: CM 8h, TD 10h, TP 15h
+;
+
+
+*Dethie SARR*
+UE 2: CM 6h, TD 5h, TP 9h
+UE 6: CM 7h, TD 9h, TP 10h
+;
+
+
+*Cheikh SARR*
+UE 2: CM 6h, TD 5h, TP 9h
+UE 7: CM 5h, TD 7h, TP 10h
+;
+
+
+*El hadj Modou MBOUP*
+UE 3: CM 3h, TD 3h, TP 5h
+UE 8: CM 5h, TD 8h, TP 10h
+;
+
+
+*Amadou KANE*
+UE 3: CM 3h, TD 3h, TP 5h
+UE 7: CM 4h, TD 7h, TP 10h
+;

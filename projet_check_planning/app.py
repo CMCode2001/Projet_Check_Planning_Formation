@@ -436,19 +436,19 @@ st.markdown("""
 # -------------------------
 # UPLOAD SECTION
 # -------------------------
-st.markdown("<div class='section-header'><h2 class='section-title'><span class='section-badge'>1</span>📁 Import des Données</h2></div>", unsafe_allow_html=True)
+st.markdown("<div class='section-header'><h2 class='section-title'><span class='section-badge'>1</span>🗐 Import des Données</h2></div>", unsafe_allow_html=True)
 
 st.markdown("""
 <div class='upload-area'>
     <div style='font-size: 4rem; margin-bottom: 1rem;'>📎</div>
     <h3>Déposez votre fichier de planning </h3>
-    <p style='color: #666;'>Formats supportés: .txt, .csv, .xlsx</p>
+    <p style='color: #666;'>Formats supportés: .txt, .csv</p>
 </div>
 """, unsafe_allow_html=True)
 
 uploaded_file = st.file_uploader(
     "Choisir un fichier",
-    type=["txt", "csv", "xlsx"],
+    type=["txt", "csv"],
     label_visibility="collapsed"
 )
 
@@ -493,47 +493,152 @@ if uploaded_file:
                     time.sleep(0.05)
                 
                 # Simulate analysis (replace with actual analysis)
-                try:
-                    process = subprocess.run(
-                        ['./verificateur'],
-                        input=texte_input,
-                        text=True,
-                        capture_output=True,
-                        timeout=60,
-                        cwd=os.path.dirname(os.path.abspath(__file__)) if os.path.dirname(os.path.abspath(__file__)) else "."
-                    )
-                    
-                    if process.returncode == 0:
-                        json_start = process.stdout.find('{')
-                        if json_start != -1:
-                            json_str = process.stdout[json_start:]
-                            data = json.loads(json_str)
+                # CSV Processing Logic
+                if uploaded_file.name.endswith('.csv'):
+                    try:
+                        df = pd.read_csv(io.StringIO(texte_input))
+                        
+                        # Structure data containers
+                        ues_dict = {}
+                        enseignants_dict = {}
+                        
+                        # Phase 1: Parse Planned Hours (Enseignant="Prévu")
+                        planned_df = df[df['Enseignant'] == 'Prévu']
+                        for _, row in planned_df.iterrows():
+                            ue_id = int(row['UE'].replace('UE', ''))
+                            ues_dict[ue_id] = {
+                                "id": ue_id,
+                                "cm_p": int(row['CM_h']), "td_p": int(row['TD_h']), "tp_p": int(row['TP_h']),
+                                "cm_a": 0, "td_a": 0, "tp_a": 0
+                            }
+
+                        # Phase 2: Parse Realized Hours (Enseignant!="Prévu")
+                        realized_df = df[df['Enseignant'] != 'Prévu']
+                        for _, row in realized_df.iterrows():
+                            ue_id = int(row['UE'].replace('UE', ''))
+                            prof_name = row['Enseignant']
                             
-                            ues_df = pd.DataFrame(data["ues"])
-                            enseignants = data.get("enseignants", [])
-                            ues_problemes = data.get("ues_problemes", [])
+                            cm, td, tp = int(row['CM_h']), int(row['TD_h']), int(row['TP_h'])
                             
-                            # Process data
-                            ues_df['Nom UE'] = "UE " + ues_df['id'].astype(str)
-                            ues_df.set_index('Nom UE', inplace=True)
-                            ues_df['Ecart CM'] = ues_df['cm_p'] - ues_df['cm_a']
-                            ues_df['Ecart TD'] = ues_df['td_p'] - ues_df['td_a']
-                            ues_df['Ecart TP'] = ues_df['tp_p'] - ues_df['tp_a']
+                            # Aggregating realized hours for UE
+                            if ue_id in ues_dict:
+                                ues_dict[ue_id]["cm_a"] += cm
+                                ues_dict[ue_id]["td_a"] += td
+                                ues_dict[ue_id]["tp_a"] += tp
                             
-                            # Store in session state
-                            st.session_state.ues_df = ues_df
-                            st.session_state.enseignants = enseignants
-                            st.session_state.ues_problemes = ues_problemes
-                            st.session_state.total_prevu = int(ues_df['cm_p'].sum() + ues_df['td_p'].sum() + ues_df['tp_p'].sum())
-                            st.session_state.total_realise = int(ues_df['cm_a'].sum() + ues_df['td_a'].sum() + ues_df['tp_a'].sum())
-                            st.session_state.analyzed = True
+                            # Aggregating for Teacher
+                            if prof_name not in enseignants_dict:
+                                enseignants_dict[prof_name] = {
+                                    "nom": prof_name,
+                                    "prevu": {"cm": 0, "td": 0, "tp": 0}, # CSV doesn't specify teacher specific planning, assume mapped to realized for now or just aggregate
+                                    "realise": {"cm": 0, "td": 0, "tp": 0},
+                                    "equivalent_td": 0
+                                }
                             
-                            progress_bar.progress(100)
-                            status_text.text("ꪜ Analyse terminée avec succès!")
-                            st.balloons()
-                            st.rerun()
-                except Exception as e:
-                    st.error(f"❌ Erreur lors de l'analyse: {str(e)}")
+                            enseignants_dict[prof_name]["realise"]["cm"] += cm
+                            enseignants_dict[prof_name]["realise"]["td"] += td
+                            enseignants_dict[prof_name]["realise"]["tp"] += tp
+                            # Heuristic: Set 'prevu' to match 'realise' to avoid 0% completion in UI if CSV doesn't provide it
+                            enseignants_dict[prof_name]["prevu"]["cm"] += cm
+                            enseignants_dict[prof_name]["prevu"]["td"] += td
+                            enseignants_dict[prof_name]["prevu"]["tp"] += tp
+                            
+                            # Calc Equiv TD (CM*1.5 + TD + TP*0.5) - Standard rule
+                            enseignants_dict[prof_name]["equivalent_td"] += (cm * 1.5) + td + (tp * 0.5)
+
+                        # Detect Problems (Discrepancies)
+                        ues_problemes = []
+                        for ue in ues_dict.values():
+                            diff_cm = ue['cm_p'] - ue['cm_a']
+                            diff_td = ue['td_p'] - ue['td_a']
+                            diff_tp = ue['tp_p'] - ue['tp_a']
+                            
+                            if diff_cm != 0 or diff_td != 0 or diff_tp != 0:
+                                ues_problemes.append({
+                                    "ue": str(ue['id']),
+                                    "cm": diff_cm, "td": diff_td, "tp": diff_tp
+                                })
+
+                        data = {
+                            "ues": list(ues_dict.values()),
+                            "enseignants": list(enseignants_dict.values()),
+                            "ues_problemes": ues_problemes
+                        }
+                        
+                        # Common Processing
+                        ues_df = pd.DataFrame(data["ues"])
+                        enseignants = data.get("enseignants", [])
+                        ues_problemes = data.get("ues_problemes", [])
+                        
+                        # Process data
+                        ues_df['Nom UE'] = "UE " + ues_df['id'].astype(str)
+                        ues_df.set_index('Nom UE', inplace=True)
+                        ues_df['Ecart CM'] = ues_df['cm_p'] - ues_df['cm_a']
+                        ues_df['Ecart TD'] = ues_df['td_p'] - ues_df['td_a']
+                        ues_df['Ecart TP'] = ues_df['tp_p'] - ues_df['tp_a']
+                        
+                        st.session_state.ues_df = ues_df
+                        st.session_state.enseignants = enseignants
+                        st.session_state.ues_problemes = ues_problemes
+                        st.session_state.total_prevu = int(ues_df['cm_p'].sum() + ues_df['td_p'].sum() + ues_df['tp_p'].sum())
+                        st.session_state.total_realise = int(ues_df['cm_a'].sum() + ues_df['td_a'].sum() + ues_df['tp_a'].sum())
+                        st.session_state.analyzed = True
+                        
+                        progress_bar.progress(100)
+                        status_text.text("ꪜ Analyse CSV terminée avec succès!")
+                        st.balloons()
+                        st.rerun()
+
+                    except Exception as e:
+                         st.error(f"❌ Erreur lors de l'analyse CSV: {str(e)}")
+
+                else:
+                    # Legacy TXT Processing (C Executable)
+                    try:
+                        process = subprocess.run(
+                            ['./verificateur'],
+                            input=texte_input,
+                            text=True,
+                            capture_output=True,
+                            timeout=60,
+                            cwd=os.path.dirname(os.path.abspath(__file__)) if os.path.dirname(os.path.abspath(__file__)) else "."
+                        )
+                        
+                        if process.returncode == 0:
+                            json_start = process.stdout.find('{')
+                            if json_start != -1:
+                                json_str = process.stdout[json_start:]
+                                data = json.loads(json_str)
+                                
+                                ues_df = pd.DataFrame(data["ues"])
+                                enseignants = data.get("enseignants", [])
+                                ues_problemes = data.get("ues_problemes", [])
+                                
+                                # Clean teacher names (remove asterisks from TXT parsing)
+                                for prof in enseignants:
+                                    prof['nom'] = prof['nom'].replace('*', '').strip()
+                                
+                                # Process data
+                                ues_df['Nom UE'] = "UE " + ues_df['id'].astype(str)
+                                ues_df.set_index('Nom UE', inplace=True)
+                                ues_df['Ecart CM'] = ues_df['cm_p'] - ues_df['cm_a']
+                                ues_df['Ecart TD'] = ues_df['td_p'] - ues_df['td_a']
+                                ues_df['Ecart TP'] = ues_df['tp_p'] - ues_df['tp_a']
+                                
+                                # Store in session state
+                                st.session_state.ues_df = ues_df
+                                st.session_state.enseignants = enseignants
+                                st.session_state.ues_problemes = ues_problemes
+                                st.session_state.total_prevu = int(ues_df['cm_p'].sum() + ues_df['td_p'].sum() + ues_df['tp_p'].sum())
+                                st.session_state.total_realise = int(ues_df['cm_a'].sum() + ues_df['td_a'].sum() + ues_df['tp_a'].sum())
+                                st.session_state.analyzed = True
+                                
+                                progress_bar.progress(100)
+                                status_text.text("ꪜ Analyse terminée avec succès!")
+                                st.balloons()
+                                st.rerun()
+                    except Exception as e:
+                        st.error(f"❌ Erreur lors de l'analyse: {str(e)}")
     
 
 
@@ -697,7 +802,11 @@ if st.session_state.analyzed:
                 <h4>⚡ Statistiques rapides</h4>
                 <div style='display: flex; flex-direction: column; gap: 1.5rem; margin-top: 1.5rem;'>
                     <div>
-                        <div style='font-size: 0.9rem; color: #666;'>Heures totales</div>
+                        <div style='font-size: 0.9rem; color: #666;'>Heures Prévues</div>
+                        <div style='font-size: 2rem; font-weight: bold;'>{:,}h</div>
+                    </div>
+                    <div>
+                        <div style='font-size: 0.9rem; color: #666;'>Heures Réalisées</div>
                         <div style='font-size: 2rem; font-weight: bold;'>{:,}h</div>
                     </div>
                     <div>
@@ -706,7 +815,7 @@ if st.session_state.analyzed:
                     </div>
                 </div>
             </div>
-            """.format(total_prevu, avg_teacher_load), unsafe_allow_html=True)
+            """.format(total_prevu, total_realise, avg_teacher_load), unsafe_allow_html=True)
     
     with tab2:
         if enseignants:
@@ -730,15 +839,15 @@ if st.session_state.analyzed:
 </div>
 <div class='teacher-stats'>
 <div>
-<div style='font-size: 1.2rem; font-weight: bold;'>{prof['realise']['cm']:.0f}</div>
+<div style='font-size: 1.2rem; font-weight: bold;'>{prof['realise']['cm']:.0f} <span style='font-size: 0.8rem; color: #888;'>/ {prof['prevu']['cm']:.0f}</span></div>
 <small style='color: #666;'>CM</small>
 </div>
 <div>
-<div style='font-size: 1.2rem; font-weight: bold;'>{prof['realise']['td']:.0f}</div>
+<div style='font-size: 1.2rem; font-weight: bold;'>{prof['realise']['td']:.0f} <span style='font-size: 0.8rem; color: #888;'>/ {prof['prevu']['td']:.0f}</span></div>
 <small style='color: #666;'>TD</small>
 </div>
 <div>
-<div style='font-size: 1.2rem; font-weight: bold;'>{prof['realise']['tp']:.0f}</div>
+<div style='font-size: 1.2rem; font-weight: bold;'>{prof['realise']['tp']:.0f} <span style='font-size: 0.8rem; color: #888;'>/ {prof['prevu']['tp']:.0f}</span></div>
 <small style='color: #666;'>TP</small>
 </div>
 </div>
@@ -944,11 +1053,11 @@ def generate_pdf_report(ues_df, enseignants, ues_problemes, stats, ai_response=N
     elements = []
     
     # --- HEADER with Logo ---
-    logo_path = "logo_thies.png"
+    logo_path = "./assets/logo_thies.png"
     header_data = []
     
     if os.path.exists(logo_path):
-        logo = RLImage(logo_path, width=1.2*inch, height=1.2*inch) # Approx aspect ratio
+        logo = RLImage(logo_path, width=1.2*inch, height=1.2*inch) 
         uni_name = Paragraph("<b>UNIVERSITÉ IBA DER THIAM DE THIÈS</b><br/><font size=12>UFR Sciences et Technologies</font>", styles['Title'])
         header_data = [[logo, uni_name]]
     else:

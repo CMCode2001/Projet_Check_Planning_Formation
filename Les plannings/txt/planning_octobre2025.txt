@@ -2,21 +2,22 @@ UE 1 CM: 9h, TD 15h, TP 30h
 UE 2: CM: 9h, TD 15h, TP: 30h
 UE 3 CM 6h, TD 4.5h, TP: 9h
 UE 4 CM 12h, TD 15h, TP: 30h
+UE 5 CM 8h, TD 12h, TP: 12h
+UE 6 CM 6h, TD 8h, TP: 10h
 
-*Enseignant AB*
+
+*Cherif KASSE*
 UE 1: CM: 9h, TD 15h, TP: 0h
 UE 2: CM 9h, TD 0h, TP: 0h
-UE 3 CM 9h, TD 0h, TP 0h
+UE 3 CM 6h, TD 0h, TP 0h
 ;
 
-*Enseignant CD*
+*Amadou MBAYE*
 UE 4 CM 12h, TD 15h, TP: 30h
+UE 5 CM 8h, TD 12h, TP: 12h
 ;
 
-*Vacataire EF*
+*Abdou Karim CISSOKHO*
 UE 2 CM 0h, TD 15h, TP 30h
-;
-
-*Vacataire GH*
-UE 3 CM 0h, TD 4.5h, TP: 4.5h
+UE 6 CM 8h, TD 8h, TP: 10h
 ;

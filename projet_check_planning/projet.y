@@ -131,7 +131,7 @@ void add_heures(int id, float cm, float td, float tp) {
         tab_profs[p].td_total += td;
         tab_profs[p].tp_total += tp;
 
-        /* Ajouter les heures prévues de cette UE au prof (une fois par assignation) */
+        /* Ajouter les heures prévues de cette UE au prof */
         if (id >= 0 && id < 100 && tab_ues[id].defined) {
             tab_profs[p].cm_prevu += tab_ues[id].cm_prevu;
             tab_profs[p].td_prevu += tab_ues[id].td_prevu;
@@ -144,7 +144,7 @@ void add_heures(int id, float cm, float td, float tp) {
 }
 
 void check_resultats() {
-    /* --- Affichage lisible par professeur (avant total équivalent) --- */
+    /* --- Affichage lisible par professeur --- */
     printf("=== Statistiques par enseignant ===\n");
     for (int i = 0; i < nb_profs; i++) {
         printf("Enseignant %s\n", tab_profs[i].nom);
