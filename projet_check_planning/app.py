@@ -468,6 +468,91 @@ if uploaded_file:
 # -------------------------
 # ANALYSIS SECTION
 # -------------------------
+# -------------------------
+# HELPER FUNCTIONS
+# -------------------------
+def validate_and_parse_file(file_obj, text_content):
+    """
+    Validates and parses the uploaded file.
+    Returns: (is_valid, data_or_error_message, is_csv)
+    """
+    if file_obj.name.endswith('.csv'):
+        try:
+            # Try parsing CSV
+            df = pd.read_csv(io.StringIO(text_content))
+            
+            # Strict Column Validation
+            required_columns = ['Enseignant', 'UE', 'CM_h', 'TD_h', 'TP_h']
+            missing_cols = [col for col in required_columns if col not in df.columns]
+            
+            if missing_cols:
+                return False, f"Format CSV invalide. Colonnes manquantes: {', '.join(missing_cols)}", True
+            
+            # Data Integrity Check (Check if numeric columns are actually numeric)
+            for col in ['CM_h', 'TD_h', 'TP_h']:
+                if not pd.to_numeric(df[col], errors='coerce').notnull().all():
+                     return False, f"Erreur de données: La colonne '{col}' contient des valeurs non numériques.", True
+
+            return True, df, True
+            
+        except pd.errors.EmptyDataError:
+             return False, "Le fichier CSV est vide.", True
+        except pd.errors.ParserError:
+             return False, "Erreur de syntaxe dans le fichier CSV. Vérifiez les séparateurs.", True
+        except Exception as e:
+            return False, f"Erreur inattendue lors de la lecture CSV: {str(e)}", True
+            
+    else:
+        # TXT Processing (Using Legacy C Executable)
+        try:
+            # Check if text seems valid (heuristic)
+            if not text_content.strip():
+                 return False, "Le fichier texte est vide.", False
+
+            cwd = os.path.dirname(os.path.abspath(__file__)) if os.path.dirname(os.path.abspath(__file__)) else "."
+            verificateur_path = os.path.join(cwd, 'verificateur.exe')
+            
+            # Check if executable exists (windows specific check included in name)
+            if not os.path.exists(verificateur_path) and not os.path.exists(os.path.join(cwd, 'verificateur')):
+                 # Fallback if executable missing, maybe allow upload in "demo" mode or hard fail
+                 # For now, hard fail as per request for strict control
+                 return False, "L'exécutable 'verificateur' est introuvable sur le serveur.", False
+
+            process = subprocess.run(
+                ['./verificateur'],
+                input=text_content,
+                text=True,
+                capture_output=True,
+                timeout=60,
+                cwd=cwd
+            )
+            
+            if process.returncode != 0:
+                # Capture Error from Stderr or Stdout
+                error_msg = process.stderr.strip() if process.stderr else "Erreur interne du vérificateur."
+                if "syntax error" in process.stdout.lower() or "error" in process.stdout.lower():
+                     # Try to extract last few lines of stdout for context
+                     lines = process.stdout.strip().split('\n')
+                     error_msg = f"Erreur de syntaxe détectée: {lines[-1] if lines else 'Inconnue'}"
+                return False, f"Le fichier n'est pas valide selon les règles de grammaire.\n(Code: {process.returncode}) {error_msg}", False
+
+            json_start = process.stdout.find('{')
+            if json_start == -1:
+                 return False, "Le vérificateur n'a pas retourné de JSON valide.", False
+            
+            try:
+                json_str = process.stdout[json_start:]
+                data = json.loads(json_str)
+                return True, data, False
+            except json.JSONDecodeError:
+                return False, "Impossible de décoder la sortie JSON du vérificateur.", False
+
+        except Exception as e:
+            return False, f"Erreur lors de l'exécution du vérificateur: {str(e)}", False
+
+# -------------------------
+# ANALYSIS SECTION
+# -------------------------
 if uploaded_file:
     st.markdown("<div class='section-header'><h2 class='section-title'><span class='section-badge'>2</span> ֎ Analyse Automatique </h2></div>", unsafe_allow_html=True)
     
@@ -475,170 +560,172 @@ if uploaded_file:
     
     with col1:
         if st.button(" ➪ Lancer l'analyse complète", type="primary"):
-            with st.spinner("🔍 Analyse en cours..."):
-                # Show analysis progress
-                progress_bar = st.progress(0)
-                status_text = st.empty()
-                
-                for i in range(1, 101, 5):
-                    progress_bar.progress(i)
-                    if i < 30:
-                        status_text.text(f"📖 Lecture des données... {i}%")
-                    elif i < 60:
-                        status_text.text(f"🔍 Vérification des cohérences... {i}%")
-                    elif i < 90:
-                        status_text.text(f"📊 Calcul des statistiques... {i}%")
-                    else:
-                        status_text.text(f"🎨 Préparation du dashboard... {i}%")
-                    time.sleep(0.05)
-                
-                # Simulate analysis (replace with actual analysis)
-                # CSV Processing Logic
-                if uploaded_file.name.endswith('.csv'):
+            
+            # 1. STRICT VALIDATION FIRST
+            # We do the heavy lifting here BEFORE showing any progress bar.
+            # If this fails, the user gets immediate feedback.
+            is_valid, result_data, is_csv = validate_and_parse_file(uploaded_file, texte_input)
+            
+            if not is_valid:
+                # IMMEDIATE ERROR ALERT
+                st.error(f"❌ ÉCHEC DE L'ANALYSE : {result_data}")
+                st.markdown("""
+                    <div class='alert-card alert-danger'>
+                        <h4>🚫 Fichier rejeté</h4>
+                        <p>Le fichier contient des erreurs bloquantes. Veuillez corriger le format et réessayer.</p>
+                        <hr>
+                        <small>Détails: """ + str(result_data) + """</small>
+                    </div>
+                """, unsafe_allow_html=True)
+            else:
+                # 2. SUCCESS - Now we show the fancy animation
+                with st.spinner("🔍 Analyse en cours..."):
+                    # Show analysis progress (Visual feedback only now)
+                    progress_bar = st.progress(0)
+                    status_text = st.empty()
+                    
+                    for i in range(1, 101, 5):
+                        progress_bar.progress(i)
+                        if i < 30:
+                            status_text.text(f"📖 Lecture des données... {i}%")
+                        elif i < 60:
+                            status_text.text(f"🔍 Vérification des cohérences... {i}%")
+                        elif i < 90:
+                            status_text.text(f"📊 Calcul des statistiques... {i}%")
+                        else:
+                            status_text.text(f"🎨 Préparation du dashboard... {i}%")
+                        time.sleep(0.02) # Faster animation since work is done
+                    
+                    # 3. USE ALREADY PARSED DATA
                     try:
-                        df = pd.read_csv(io.StringIO(texte_input))
-                        
-                        # Structure data containers
-                        ues_dict = {}
-                        enseignants_dict = {}
-                        
-                        # Phase 1: Parse Planned Hours (Enseignant="Prévu")
-                        planned_df = df[df['Enseignant'] == 'Prévu']
-                        for _, row in planned_df.iterrows():
-                            ue_id = int(row['UE'].replace('UE', ''))
-                            ues_dict[ue_id] = {
-                                "id": ue_id,
-                                "cm_p": int(row['CM_h']), "td_p": int(row['TD_h']), "tp_p": int(row['TP_h']),
-                                "cm_a": 0, "td_a": 0, "tp_a": 0
-                            }
-
-                        # Phase 2: Parse Realized Hours (Enseignant!="Prévu")
-                        realized_df = df[df['Enseignant'] != 'Prévu']
-                        for _, row in realized_df.iterrows():
-                            ue_id = int(row['UE'].replace('UE', ''))
-                            prof_name = row['Enseignant']
+                        if is_csv:
+                            df = result_data
                             
-                            cm, td, tp = int(row['CM_h']), int(row['TD_h']), int(row['TP_h'])
+                            # Structure data containers
+                            ues_dict = {}
+                            enseignants_dict = {}
                             
-                            # Aggregating realized hours for UE
-                            if ue_id in ues_dict:
-                                ues_dict[ue_id]["cm_a"] += cm
-                                ues_dict[ue_id]["td_a"] += td
-                                ues_dict[ue_id]["tp_a"] += tp
-                            
-                            # Aggregating for Teacher
-                            if prof_name not in enseignants_dict:
-                                enseignants_dict[prof_name] = {
-                                    "nom": prof_name,
-                                    "prevu": {"cm": 0, "td": 0, "tp": 0}, # CSV doesn't specify teacher specific planning, assume mapped to realized for now or just aggregate
-                                    "realise": {"cm": 0, "td": 0, "tp": 0},
-                                    "equivalent_td": 0
+                            # Phase 1: Parse Planned Hours (Enseignant="Prévu")
+                            planned_df = df[df['Enseignant'] == 'Prévu']
+                            for _, row in planned_df.iterrows():
+                                ue_id = int(str(row['UE']).replace('UE', ''))
+                                ues_dict[ue_id] = {
+                                    "id": ue_id,
+                                    "cm_p": int(row['CM_h']), "td_p": int(row['TD_h']), "tp_p": int(row['TP_h']),
+                                    "cm_a": 0, "td_a": 0, "tp_a": 0
                                 }
-                            
-                            enseignants_dict[prof_name]["realise"]["cm"] += cm
-                            enseignants_dict[prof_name]["realise"]["td"] += td
-                            enseignants_dict[prof_name]["realise"]["tp"] += tp
-                            # Heuristic: Set 'prevu' to match 'realise' to avoid 0% completion in UI if CSV doesn't provide it
-                            enseignants_dict[prof_name]["prevu"]["cm"] += cm
-                            enseignants_dict[prof_name]["prevu"]["td"] += td
-                            enseignants_dict[prof_name]["prevu"]["tp"] += tp
-                            
-                            # Calc Equiv TD (CM*1.5 + TD + TP*0.5) - Standard rule
-                            enseignants_dict[prof_name]["equivalent_td"] += (cm * 1.5) + td + (tp * 0.5)
 
-                        # Detect Problems (Discrepancies)
-                        ues_problemes = []
-                        for ue in ues_dict.values():
-                            diff_cm = ue['cm_p'] - ue['cm_a']
-                            diff_td = ue['td_p'] - ue['td_a']
-                            diff_tp = ue['tp_p'] - ue['tp_a']
-                            
-                            if diff_cm != 0 or diff_td != 0 or diff_tp != 0:
-                                ues_problemes.append({
-                                    "ue": str(ue['id']),
-                                    "cm": diff_cm, "td": diff_td, "tp": diff_tp
-                                })
+                            # Phase 2: Parse Realized Hours (Enseignant!="Prévu")
+                            realized_df = df[df['Enseignant'] != 'Prévu']
+                            for _, row in realized_df.iterrows():
+                                ue_id = int(str(row['UE']).replace('UE', ''))
+                                prof_name = row['Enseignant']
+                                
+                                cm, td, tp = int(row['CM_h']), int(row['TD_h']), int(row['TP_h'])
+                                
+                                # Aggregating realized hours for UE
+                                if ue_id in ues_dict:
+                                    ues_dict[ue_id]["cm_a"] += cm
+                                    ues_dict[ue_id]["td_a"] += td
+                                    ues_dict[ue_id]["tp_a"] += tp
+                                
+                                # Aggregating for Teacher
+                                if prof_name not in enseignants_dict:
+                                    enseignants_dict[prof_name] = {
+                                        "nom": prof_name,
+                                        "prevu": {"cm": 0, "td": 0, "tp": 0}, 
+                                        "realise": {"cm": 0, "td": 0, "tp": 0},
+                                        "equivalent_td": 0
+                                    }
+                                
+                                enseignants_dict[prof_name]["realise"]["cm"] += cm
+                                enseignants_dict[prof_name]["realise"]["td"] += td
+                                enseignants_dict[prof_name]["realise"]["tp"] += tp
+                                # Heuristic: Set 'prevu' to match 'realise' to avoid 0% completion in UI if CSV doesn't provide it
+                                enseignants_dict[prof_name]["prevu"]["cm"] += cm
+                                enseignants_dict[prof_name]["prevu"]["td"] += td
+                                enseignants_dict[prof_name]["prevu"]["tp"] += tp
+                                
+                                # Calc Equiv TD (CM*1.5 + TD + TP*0.5) - Standard rule
+                                enseignants_dict[prof_name]["equivalent_td"] += (cm * 1.5) + td + (tp * 0.5)
 
-                        data = {
-                            "ues": list(ues_dict.values()),
-                            "enseignants": list(enseignants_dict.values()),
-                            "ues_problemes": ues_problemes
-                        }
-                        
-                        # Common Processing
-                        ues_df = pd.DataFrame(data["ues"])
-                        enseignants = data.get("enseignants", [])
-                        ues_problemes = data.get("ues_problemes", [])
-                        
-                        # Process data
-                        ues_df['Nom UE'] = "UE " + ues_df['id'].astype(str)
-                        ues_df.set_index('Nom UE', inplace=True)
-                        ues_df['Ecart CM'] = ues_df['cm_p'] - ues_df['cm_a']
-                        ues_df['Ecart TD'] = ues_df['td_p'] - ues_df['td_a']
-                        ues_df['Ecart TP'] = ues_df['tp_p'] - ues_df['tp_a']
-                        
-                        st.session_state.ues_df = ues_df
-                        st.session_state.enseignants = enseignants
-                        st.session_state.ues_problemes = ues_problemes
-                        st.session_state.total_prevu = int(ues_df['cm_p'].sum() + ues_df['td_p'].sum() + ues_df['tp_p'].sum())
-                        st.session_state.total_realise = int(ues_df['cm_a'].sum() + ues_df['td_a'].sum() + ues_df['tp_a'].sum())
-                        st.session_state.analyzed = True
-                        
-                        progress_bar.progress(100)
-                        status_text.text("ꪜ Analyse CSV terminée avec succès!")
-                        st.balloons()
-                        st.rerun()
+                            # Detect Problems (Discrepancies)
+                            ues_problemes = []
+                            for ue in ues_dict.values():
+                                diff_cm = ue['cm_p'] - ue['cm_a']
+                                diff_td = ue['td_p'] - ue['td_a']
+                                diff_tp = ue['tp_p'] - ue['tp_a']
+                                
+                                if diff_cm != 0 or diff_td != 0 or diff_tp != 0:
+                                    ues_problemes.append({
+                                        "ue": str(ue['id']),
+                                        "cm": diff_cm, "td": diff_td, "tp": diff_tp
+                                    })
+
+                            data = {
+                                "ues": list(ues_dict.values()),
+                                "enseignants": list(enseignants_dict.values()),
+                                "ues_problemes": ues_problemes
+                            }
+                            
+                            # Common Processing
+                            ues_df = pd.DataFrame(data["ues"])
+                            enseignants = data.get("enseignants", [])
+                            ues_problemes = data.get("ues_problemes", [])
+                            
+                            # Process data
+                            ues_df['Nom UE'] = "UE " + ues_df['id'].astype(str)
+                            ues_df.set_index('Nom UE', inplace=True)
+                            ues_df['Ecart CM'] = ues_df['cm_p'] - ues_df['cm_a']
+                            ues_df['Ecart TD'] = ues_df['td_p'] - ues_df['td_a']
+                            ues_df['Ecart TP'] = ues_df['tp_p'] - ues_df['tp_a']
+                            
+                            st.session_state.ues_df = ues_df
+                            st.session_state.enseignants = enseignants
+                            st.session_state.ues_problemes = ues_problemes
+                            st.session_state.total_prevu = int(ues_df['cm_p'].sum() + ues_df['td_p'].sum() + ues_df['tp_p'].sum())
+                            st.session_state.total_realise = int(ues_df['cm_a'].sum() + ues_df['td_a'].sum() + ues_df['tp_a'].sum())
+                            st.session_state.analyzed = True
+                            
+                            progress_bar.progress(100)
+                            status_text.text("ꪜ Analyse CSV terminée avec succès!")
+                            st.balloons()
+                            st.rerun()
+
+                        else:
+                            # LIST OF UES FROM TXT (Uses the data dict directly)
+                            data = result_data
+                                    
+                            ues_df = pd.DataFrame(data["ues"])
+                            enseignants = data.get("enseignants", [])
+                            ues_problemes = data.get("ues_problemes", [])
+                            
+                            # Clean teacher names (remove asterisks from TXT parsing)
+                            for prof in enseignants:
+                                prof['nom'] = prof['nom'].replace('*', '').strip()
+                            
+                            # Process data
+                            ues_df['Nom UE'] = "UE " + ues_df['id'].astype(str)
+                            ues_df.set_index('Nom UE', inplace=True)
+                            ues_df['Ecart CM'] = ues_df['cm_p'] - ues_df['cm_a']
+                            ues_df['Ecart TD'] = ues_df['td_p'] - ues_df['td_a']
+                            ues_df['Ecart TP'] = ues_df['tp_p'] - ues_df['tp_a']
+                            
+                            # Store in session state
+                            st.session_state.ues_df = ues_df
+                            st.session_state.enseignants = enseignants
+                            st.session_state.ues_problemes = ues_problemes
+                            st.session_state.total_prevu = int(ues_df['cm_p'].sum() + ues_df['td_p'].sum() + ues_df['tp_p'].sum())
+                            st.session_state.total_realise = int(ues_df['cm_a'].sum() + ues_df['td_a'].sum() + ues_df['tp_a'].sum())
+                            st.session_state.analyzed = True
+                            
+                            progress_bar.progress(100)
+                            status_text.text("ꪜ Analyse terminée avec succès!")
+                            st.balloons()
+                            st.rerun()
 
                     except Exception as e:
-                         st.error(f"❌ Erreur lors de l'analyse CSV: {str(e)}")
-
-                else:
-                    # Legacy TXT Processing (C Executable)
-                    try:
-                        process = subprocess.run(
-                            ['./verificateur'],
-                            input=texte_input,
-                            text=True,
-                            capture_output=True,
-                            timeout=60,
-                            cwd=os.path.dirname(os.path.abspath(__file__)) if os.path.dirname(os.path.abspath(__file__)) else "."
-                        )
-                        
-                        if process.returncode == 0:
-                            json_start = process.stdout.find('{')
-                            if json_start != -1:
-                                json_str = process.stdout[json_start:]
-                                data = json.loads(json_str)
-                                
-                                ues_df = pd.DataFrame(data["ues"])
-                                enseignants = data.get("enseignants", [])
-                                ues_problemes = data.get("ues_problemes", [])
-                                
-                                # Clean teacher names (remove asterisks from TXT parsing)
-                                for prof in enseignants:
-                                    prof['nom'] = prof['nom'].replace('*', '').strip()
-                                
-                                # Process data
-                                ues_df['Nom UE'] = "UE " + ues_df['id'].astype(str)
-                                ues_df.set_index('Nom UE', inplace=True)
-                                ues_df['Ecart CM'] = ues_df['cm_p'] - ues_df['cm_a']
-                                ues_df['Ecart TD'] = ues_df['td_p'] - ues_df['td_a']
-                                ues_df['Ecart TP'] = ues_df['tp_p'] - ues_df['tp_a']
-                                
-                                # Store in session state
-                                st.session_state.ues_df = ues_df
-                                st.session_state.enseignants = enseignants
-                                st.session_state.ues_problemes = ues_problemes
-                                st.session_state.total_prevu = int(ues_df['cm_p'].sum() + ues_df['td_p'].sum() + ues_df['tp_p'].sum())
-                                st.session_state.total_realise = int(ues_df['cm_a'].sum() + ues_df['td_a'].sum() + ues_df['tp_a'].sum())
-                                st.session_state.analyzed = True
-                                
-                                progress_bar.progress(100)
-                                status_text.text("ꪜ Analyse terminée avec succès!")
-                                st.balloons()
-                                st.rerun()
-                    except Exception as e:
-                        st.error(f"❌ Erreur lors de l'analyse: {str(e)}")
+                         st.error(f"❌ Erreur inattendue lors du traitement des données: {str(e)}")
     
 
 
