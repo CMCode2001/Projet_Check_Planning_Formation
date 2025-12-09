@@ -71,15 +71,19 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "data.h"
 
 int yylex();
 void yyerror(char *s);
 
+/* Variables globales (définies dans ce fichier) */
 UE tab_ues[100];
+Enseignant tab_profs[50];
 int max_ue_id = 0;
+int nb_profs = 0;
 
-#line 83 "y.tab.c"
+#line 87 "y.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -130,8 +134,8 @@ extern int yydebug;
     TOK_DEUX_POINTS = 262,         /* TOK_DEUX_POINTS  */
     TOK_VIRGULE = 263,             /* TOK_VIRGULE  */
     TOK_POINT_VIRGULE = 264,       /* TOK_POINT_VIRGULE  */
-    TOK_NOM_ENS = 265,             /* TOK_NOM_ENS  */
-    TOK_VAL = 266                  /* TOK_VAL  */
+    TOK_VAL = 265,                 /* TOK_VAL  */
+    TOK_NOM_ENS = 266              /* TOK_NOM_ENS  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -147,20 +151,20 @@ extern int yydebug;
 #define TOK_DEUX_POINTS 262
 #define TOK_VIRGULE 263
 #define TOK_POINT_VIRGULE 264
-#define TOK_NOM_ENS 265
-#define TOK_VAL 266
+#define TOK_VAL 265
+#define TOK_NOM_ENS 266
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 13 "projet.y"
+#line 18 "projet.y"
 
     float floatVal;
     int intVal;
     char *strVal;
 
-#line 164 "y.tab.c"
+#line 168 "y.tab.c"
 
 };
 typedef union YYSTYPE YYSTYPE;
@@ -188,18 +192,19 @@ enum yysymbol_kind_t
   YYSYMBOL_TOK_DEUX_POINTS = 7,            /* TOK_DEUX_POINTS  */
   YYSYMBOL_TOK_VIRGULE = 8,                /* TOK_VIRGULE  */
   YYSYMBOL_TOK_POINT_VIRGULE = 9,          /* TOK_POINT_VIRGULE  */
-  YYSYMBOL_TOK_NOM_ENS = 10,               /* TOK_NOM_ENS  */
-  YYSYMBOL_TOK_VAL = 11,                   /* TOK_VAL  */
+  YYSYMBOL_TOK_VAL = 10,                   /* TOK_VAL  */
+  YYSYMBOL_TOK_NOM_ENS = 11,               /* TOK_NOM_ENS  */
   YYSYMBOL_YYACCEPT = 12,                  /* $accept  */
   YYSYMBOL_programme = 13,                 /* programme  */
   YYSYMBOL_liste_ue = 14,                  /* liste_ue  */
   YYSYMBOL_definition_ue = 15,             /* definition_ue  */
   YYSYMBOL_liste_enseignants = 16,         /* liste_enseignants  */
   YYSYMBOL_bloc_enseignant = 17,           /* bloc_enseignant  */
-  YYSYMBOL_liste_assignations = 18,        /* liste_assignations  */
-  YYSYMBOL_assignation = 19,               /* assignation  */
-  YYSYMBOL_opt_deux_points = 20,           /* opt_deux_points  */
-  YYSYMBOL_opt_virgule = 21                /* opt_virgule  */
+  YYSYMBOL_18_1 = 18,                      /* $@1  */
+  YYSYMBOL_liste_assignations = 19,        /* liste_assignations  */
+  YYSYMBOL_assignation = 20,               /* assignation  */
+  YYSYMBOL_opt_deux_points = 21,           /* opt_deux_points  */
+  YYSYMBOL_opt_virgule = 22                /* opt_virgule  */
 };
 typedef enum yysymbol_kind_t yysymbol_kind_t;
 
@@ -509,16 +514,16 @@ union yyalloc
 /* YYFINAL -- State number of the termination state.  */
 #define YYFINAL  6
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   42
+#define YYLAST   37
 
 /* YYNTOKENS -- Number of terminals.  */
 #define YYNTOKENS  12
 /* YYNNTS -- Number of nonterminals.  */
-#define YYNNTS  10
+#define YYNNTS  11
 /* YYNRULES -- Number of rules.  */
-#define YYNRULES  15
+#define YYNRULES  16
 /* YYNSTATES -- Number of states.  */
-#define YYNSTATES  44
+#define YYNSTATES  45
 
 /* YYMAXUTOK -- Last valid token kind.  */
 #define YYMAXUTOK   266
@@ -568,8 +573,8 @@ static const yytype_int8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int8 yyrline[] =
 {
-       0,    25,    25,    31,    31,    34,    43,    43,    46,    49,
-      49,    52,    61,    61,    62,    62
+       0,    31,    31,    35,    35,    38,    48,    48,    52,    51,
+      60,    60,    63,    72,    72,    73,    73
 };
 #endif
 
@@ -587,9 +592,10 @@ static const char *const yytname[] =
 {
   "\"end of file\"", "error", "\"invalid token\"", "TOK_UE", "TOK_CM",
   "TOK_TD", "TOK_TP", "TOK_DEUX_POINTS", "TOK_VIRGULE",
-  "TOK_POINT_VIRGULE", "TOK_NOM_ENS", "TOK_VAL", "$accept", "programme",
+  "TOK_POINT_VIRGULE", "TOK_VAL", "TOK_NOM_ENS", "$accept", "programme",
   "liste_ue", "definition_ue", "liste_enseignants", "bloc_enseignant",
-  "liste_assignations", "assignation", "opt_deux_points", "opt_virgule", YY_NULLPTR
+  "$@1", "liste_assignations", "assignation", "opt_deux_points",
+  "opt_virgule", YY_NULLPTR
 };
 
 static const char *
@@ -609,7 +615,7 @@ static const yytype_int16 yytoknum[] =
 };
 #endif
 
-#define YYPACT_NINF (-28)
+#define YYPACT_NINF (-31)
 
 #define yypact_value_is_default(Yyn) \
   ((Yyn) == YYPACT_NINF)
@@ -623,11 +629,11 @@ static const yytype_int16 yytoknum[] =
      STATE-NUM.  */
 static const yytype_int8 yypact[] =
 {
-       1,    -3,    12,     3,   -28,     7,   -28,    14,   -28,     5,
-     -28,   -28,    16,    10,     0,   -28,   -28,     7,     7,   -28,
-     -28,    11,    19,    17,     7,   -28,    13,    15,     7,    17,
-      18,    22,    17,     7,    24,    20,     7,    17,    21,    27,
-     -28,     7,    23,   -28
+       3,    -3,     8,     0,   -31,     7,   -31,   -31,   -31,     4,
+     -31,   -31,    12,    14,   -31,     7,     9,     1,   -31,    13,
+       7,   -31,   -31,    10,    18,   -31,    19,     7,     7,    15,
+      16,    10,    10,    23,    24,     7,     7,    21,    22,    10,
+     -31,    27,     7,    25,   -31
 };
 
   /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
@@ -635,23 +641,25 @@ static const yytype_int8 yypact[] =
      means the default is an error.  */
 static const yytype_int8 yydefact[] =
 {
-       0,     0,     0,     0,     3,    13,     1,     0,     4,     2,
-       6,    12,     0,     0,     0,     9,     7,    13,    13,     8,
-      10,     0,     0,    15,    13,    14,     0,     0,    13,    15,
-       0,     0,    15,    13,     0,     0,    13,    15,     0,     0,
-       5,    13,     0,    11
+       0,     0,     0,     0,     3,    14,     1,     8,     4,     2,
+       6,    13,     0,     0,     7,    14,     0,     0,    10,     0,
+      14,     9,    11,    16,     0,    15,     0,    14,    14,     0,
+       0,    16,    16,     0,     0,    14,    14,     0,     0,    16,
+       5,     0,    14,     0,    12
 };
 
   /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int8 yypgoto[] =
 {
-     -28,   -28,   -28,    25,   -28,    26,   -28,    28,   -17,   -27
+     -31,   -31,   -31,    26,   -31,    28,   -31,   -31,    17,   -15,
+     -30
 };
 
   /* YYDEFGOTO[NTERM-NUM].  */
 static const yytype_int8 yydefgoto[] =
 {
-      -1,     2,     3,     4,     9,    10,    14,    15,    12,    26
+      -1,     2,     3,     4,     9,    10,    13,    17,    18,    12,
+      26
 };
 
   /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
@@ -659,45 +667,43 @@ static const yytype_int8 yydefgoto[] =
      number is the opposite.  If YYTABLE_NINF, syntax error.  */
 static const yytype_int8 yytable[] =
 {
-      21,    22,    31,    13,     1,    34,     1,    27,     5,    19,
-      39,    30,     6,     7,    11,     7,    35,    13,    28,    38,
-      17,    18,    23,    24,    42,    25,    29,    33,     8,    32,
-      36,    37,    40,    41,    43,    16,     0,     0,     0,     0,
-       0,     0,    20
+      19,    33,    34,     1,    16,    24,     1,     5,     6,    41,
+      21,     7,    29,    30,    11,     7,    15,    16,    25,    20,
+      37,    38,    27,    23,    28,    31,    32,    43,    35,     8,
+      36,    39,    40,    42,    22,    44,     0,    14
 };
 
 static const yytype_int8 yycheck[] =
 {
-      17,    18,    29,     3,     3,    32,     3,    24,    11,     9,
-      37,    28,     0,    10,     7,    10,    33,     3,     5,    36,
-       4,    11,    11,     4,    41,     8,    11,     5,     3,    11,
-       6,    11,    11,     6,    11,     9,    -1,    -1,    -1,    -1,
-      -1,    -1,    14
+      15,    31,    32,     3,     3,    20,     3,    10,     0,    39,
+       9,    11,    27,    28,     7,    11,     4,     3,     8,    10,
+      35,    36,     4,    10,     5,    10,    10,    42,     5,     3,
+       6,    10,    10,     6,    17,    10,    -1,     9
 };
 
   /* YYSTOS[STATE-NUM] -- The (internal number of the) accessing
      symbol of state STATE-NUM.  */
 static const yytype_int8 yystos[] =
 {
-       0,     3,    13,    14,    15,    11,     0,    10,    15,    16,
-      17,     7,    20,     3,    18,    19,    17,     4,    11,     9,
-      19,    20,    20,    11,     4,     8,    21,    20,     5,    11,
-      20,    21,    11,     5,    21,    20,     6,    11,    20,    21,
-      11,     6,    20,    11
+       0,     3,    13,    14,    15,    10,     0,    11,    15,    16,
+      17,     7,    21,    18,    17,     4,     3,    19,    20,    21,
+      10,     9,    20,    10,    21,     8,    22,     4,     5,    21,
+      21,    10,    10,    22,    22,     5,     6,    21,    21,    10,
+      10,    22,     6,    21,    10
 };
 
   /* YYR1[YYN] -- Symbol number of symbol that rule YYN derives.  */
 static const yytype_int8 yyr1[] =
 {
-       0,    12,    13,    14,    14,    15,    16,    16,    17,    18,
-      18,    19,    20,    20,    21,    21
+       0,    12,    13,    14,    14,    15,    16,    16,    18,    17,
+      19,    19,    20,    21,    21,    22,    22
 };
 
   /* YYR2[YYN] -- Number of symbols on the right hand side of rule YYN.  */
 static const yytype_int8 yyr2[] =
 {
-       0,     2,     2,     1,     2,    14,     1,     2,     3,     1,
-       2,    14,     1,     0,     1,     0
+       0,     2,     2,     1,     2,    14,     1,     2,     0,     4,
+       1,     2,    14,     1,     0,     1,     0
 };
 
 
@@ -1165,31 +1171,39 @@ yyreduce:
   switch (yyn)
     {
   case 2: /* programme: liste_ue liste_enseignants  */
-#line 26 "projet.y"
-    {
-        check_resultats(); /* Génération du JSON à la fin */
-    }
-#line 1173 "y.tab.c"
+#line 32 "projet.y"
+    { check_resultats(); }
+#line 1177 "y.tab.c"
     break;
 
   case 5: /* definition_ue: TOK_UE TOK_VAL opt_deux_points TOK_CM opt_deux_points TOK_VAL opt_virgule TOK_TD opt_deux_points TOK_VAL opt_virgule TOK_TP opt_deux_points TOK_VAL  */
-#line 38 "projet.y"
-    {
-        init_ue((int)(yyvsp[-12].floatVal), (yyvsp[-8].floatVal), (yyvsp[-4].floatVal), (yyvsp[0].floatVal));
+#line 42 "projet.y"
+    { 
+        /* TOK_VAL est un float, mais l'id est entier */
+        init_ue((int)(yyvsp[-12].floatVal), (yyvsp[-8].floatVal), (yyvsp[-4].floatVal), (yyvsp[0].floatVal)); 
     }
-#line 1181 "y.tab.c"
+#line 1186 "y.tab.c"
     break;
 
-  case 11: /* assignation: TOK_UE TOK_VAL opt_deux_points TOK_CM opt_deux_points TOK_VAL opt_virgule TOK_TD opt_deux_points TOK_VAL opt_virgule TOK_TP opt_deux_points TOK_VAL  */
-#line 56 "projet.y"
-    {
-        add_heures((int)(yyvsp[-12].floatVal), (yyvsp[-8].floatVal), (yyvsp[-4].floatVal), (yyvsp[0].floatVal));
+  case 8: /* $@1: %empty  */
+#line 52 "projet.y"
+    { 
+        nouveau_prof((yyvsp[0].strVal)); 
+        free((yyvsp[0].strVal)); /* on a strdup dans le lexer */
     }
-#line 1189 "y.tab.c"
+#line 1195 "y.tab.c"
+    break;
+
+  case 12: /* assignation: TOK_UE TOK_VAL opt_deux_points TOK_CM opt_deux_points TOK_VAL opt_virgule TOK_TD opt_deux_points TOK_VAL opt_virgule TOK_TP opt_deux_points TOK_VAL  */
+#line 67 "projet.y"
+    { 
+        add_heures((int)(yyvsp[-12].floatVal), (yyvsp[-8].floatVal), (yyvsp[-4].floatVal), (yyvsp[0].floatVal)); 
+    }
+#line 1203 "y.tab.c"
     break;
 
 
-#line 1193 "y.tab.c"
+#line 1207 "y.tab.c"
 
       default: break;
     }
@@ -1383,45 +1397,161 @@ yyreturn:
   return yyresult;
 }
 
-#line 64 "projet.y"
+#line 75 "projet.y"
 
+
+/* --- CODE C --- */
 
 void init_ue(int id, float cm, float td, float tp) {
-    if(id < 100) {
-        tab_ues[id].id = id;
-        tab_ues[id].cm_prevu = cm; tab_ues[id].td_prevu = td; tab_ues[id].tp_prevu = tp;
-        tab_ues[id].defined = 1;
-        if(id > max_ue_id) max_ue_id = id;
+    if (id < 0 || id >= 100) return;
+    tab_ues[id].id = id;
+    tab_ues[id].cm_prevu = cm;
+    tab_ues[id].td_prevu = td;
+    tab_ues[id].tp_prevu = tp;
+
+    /* initialiser les heures assurées à 0 */
+    tab_ues[id].cm_assure = 0.0f;
+    tab_ues[id].td_assure = 0.0f;
+    tab_ues[id].tp_assure = 0.0f;
+
+    tab_ues[id].defined = 1;
+    if (id > max_ue_id) max_ue_id = id;
+}
+
+void nouveau_prof(char *nom) {
+    if (nb_profs < 50) {
+        /* On copie le nom */
+        strncpy(tab_profs[nb_profs].nom, nom, sizeof(tab_profs[nb_profs].nom)-1);
+        tab_profs[nb_profs].nom[sizeof(tab_profs[nb_profs].nom)-1] = '\0';
+
+        /* Initialiser totaux réalisés et prévus */
+        tab_profs[nb_profs].cm_total = 0.0f;
+        tab_profs[nb_profs].td_total = 0.0f;
+        tab_profs[nb_profs].tp_total = 0.0f;
+
+        tab_profs[nb_profs].cm_prevu = 0.0f;
+        tab_profs[nb_profs].td_prevu = 0.0f;
+        tab_profs[nb_profs].tp_prevu = 0.0f;
+
+        tab_profs[nb_profs].eq_td_total = 0.0f;
+
+        nb_profs++;
     }
 }
 
 void add_heures(int id, float cm, float td, float tp) {
-    if(id < 100 && tab_ues[id].defined) {
-        tab_ues[id].cm_assure += cm; tab_ues[id].td_assure += td; tab_ues[id].tp_assure += tp;
+    /* 1) Ajouter à l'UE (heures assurées) */
+    if (id >= 0 && id < 100 && tab_ues[id].defined) {
+        tab_ues[id].cm_assure += cm;
+        tab_ues[id].td_assure += td;
+        tab_ues[id].tp_assure += tp;
+    } else {
+        /* UE non définie : on peut l'ignorer ou afficher un warning */
+        fprintf(stderr, "Warning: assignation pour UE %d non définie (ignorée)\n", id);
+    }
+
+    /* 2) Ajouter au Prof en cours (heures réalisées) */
+    if (nb_profs > 0) {
+        int p = nb_profs - 1;
+        tab_profs[p].cm_total += cm;
+        tab_profs[p].td_total += td;
+        tab_profs[p].tp_total += tp;
+
+        /* Ajouter les heures prévues de cette UE au prof (une fois par assignation) */
+        if (id >= 0 && id < 100 && tab_ues[id].defined) {
+            tab_profs[p].cm_prevu += tab_ues[id].cm_prevu;
+            tab_profs[p].td_prevu += tab_ues[id].td_prevu;
+            tab_profs[p].tp_prevu += tab_ues[id].tp_prevu;
+        }
+
+        /* Calcul EQ TD : CM*1.5 + TD*1 + TP*0.5 */
+        tab_profs[p].eq_td_total += (cm * 1.5f) + (td * 1.0f) + (tp * 0.5f);
     }
 }
 
-// C'EST ICI QUE L'ON GENERE LE JSON POUR PYTHON
 void check_resultats() {
-    printf("[\n"); // Début du tableau JSON
+    /* --- Affichage lisible par professeur (avant total équivalent) --- */
+    printf("=== Statistiques par enseignant ===\n");
+    for (int i = 0; i < nb_profs; i++) {
+        printf("Enseignant %s\n", tab_profs[i].nom);
+        printf("  CM prevu : %.2f  | CM realise : %.2f\n", tab_profs[i].cm_prevu, tab_profs[i].cm_total);
+        printf("  TD prevu : %.2f  | TD realise : %.2f\n", tab_profs[i].td_prevu, tab_profs[i].td_total);
+        printf("  TP prevu : %.2f  | TP realise : %.2f\n", tab_profs[i].tp_prevu, tab_profs[i].tp_total);
+        printf("  => Equiv. TD total (calcule a partir des stats realise) : %.2f h\n", tab_profs[i].eq_td_total);
+        printf("\n");
+    }
+
+    /* --- Sortie JSON détaillée --- */
+    printf("{\n");
+
+    /* JSON Partie UEs */
+    printf("  \"ues\": [\n");
     int first = 1;
-    for(int i = 1; i <= max_ue_id; i++) {
-        if(tab_ues[i].defined) {
-            if(!first) printf(",\n");
+    for (int i = 1; i <= max_ue_id; i++) {
+        if (tab_ues[i].defined) {
+            if (!first) printf(",\n");
             first = 0;
-            printf("  {\"id\": %d, \"cm_p\": %.2f, \"cm_a\": %.2f, \"td_p\": %.2f, \"td_a\": %.2f, \"tp_p\": %.2f, \"tp_a\": %.2f}",
+            printf("    {\"id\": %d, \"cm_p\": %.2f, \"cm_a\": %.2f, \"td_p\": %.2f, \"td_a\": %.2f, \"tp_p\": %.2f, \"tp_a\": %.2f}",
                    i, tab_ues[i].cm_prevu, tab_ues[i].cm_assure,
                    tab_ues[i].td_prevu, tab_ues[i].td_assure,
                    tab_ues[i].tp_prevu, tab_ues[i].tp_assure);
         }
     }
-    printf("\n]\n"); // Fin du tableau JSON
+    printf("\n  ],\n");
+
+    /* JSON Partie Enseignants (enrichie) */
+    printf("  \"enseignants\": [\n");
+    first = 1;
+    for (int i = 0; i < nb_profs; i++) {
+        if (!first) printf(",\n");
+        first = 0;
+        printf("    {\n");
+        printf("      \"nom\": \"%s\",\n", tab_profs[i].nom);
+        printf("      \"prevu\": {\"cm\": %.2f, \"td\": %.2f, \"tp\": %.2f},\n",
+               tab_profs[i].cm_prevu, tab_profs[i].td_prevu, tab_profs[i].tp_prevu);
+        printf("      \"realise\": {\"cm\": %.2f, \"td\": %.2f, \"tp\": %.2f},\n",
+               tab_profs[i].cm_total, tab_profs[i].td_total, tab_profs[i].tp_total);
+        printf("      \"equivalent_td\": %.2f\n", tab_profs[i].eq_td_total);
+        printf("    }");
+    }
+    printf("\n  ],\n");
+
+    /* Analyse des problèmes par UE (manquantes / en trop) */
+    printf("  \"ues_problemes\": [\n");
+    first = 1;
+    for (int i = 1; i <= max_ue_id; i++) {
+        if (tab_ues[i].defined) {
+            float diff_cm = tab_ues[i].cm_assure - tab_ues[i].cm_prevu;
+            float diff_td = tab_ues[i].td_assure - tab_ues[i].td_prevu;
+            float diff_tp = tab_ues[i].tp_assure - tab_ues[i].tp_prevu;
+            if (diff_cm != 0.0f || diff_td != 0.0f || diff_tp != 0.0f) {
+                if (!first) printf(",\n");
+                first = 0;
+                printf("    {\"ue\": %d, \"cm\": %.2f, \"td\": %.2f, \"tp\": %.2f}",
+                       i, diff_cm, diff_td, diff_tp);
+            }
+        }
+    }
+    printf("\n  ]\n");
+
+    printf("}\n");
 }
 
-void yyerror(char *s) { fprintf(stderr, "Erreur: %s\n", s); }
+void yyerror(char *s) {
+    fprintf(stderr, "Erreur: %s\n", s);
+}
 
+/* --- main --- */
 int main() {
-    for(int i=0; i<100; i++) tab_ues[i].defined = 0;
+    /* Initialiser les UEs par défaut */
+    for (int i = 0; i < 100; i++) {
+        tab_ues[i].defined = 0;
+        tab_ues[i].cm_prevu = tab_ues[i].td_prevu = tab_ues[i].tp_prevu = 0.0f;
+        tab_ues[i].cm_assure = tab_ues[i].td_assure = tab_ues[i].tp_assure = 0.0f;
+        tab_ues[i].id = i;
+    }
+
+    /* initialisation nb_profs = 0 (déjà en global) */
     yyparse();
     return 0;
 }

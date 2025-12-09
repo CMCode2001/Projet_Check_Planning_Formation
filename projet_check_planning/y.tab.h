@@ -61,8 +61,8 @@ extern int yydebug;
     TOK_DEUX_POINTS = 262,         /* TOK_DEUX_POINTS  */
     TOK_VIRGULE = 263,             /* TOK_VIRGULE  */
     TOK_POINT_VIRGULE = 264,       /* TOK_POINT_VIRGULE  */
-    TOK_NOM_ENS = 265,             /* TOK_NOM_ENS  */
-    TOK_VAL = 266                  /* TOK_VAL  */
+    TOK_VAL = 265,                 /* TOK_VAL  */
+    TOK_NOM_ENS = 266              /* TOK_NOM_ENS  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -78,14 +78,14 @@ extern int yydebug;
 #define TOK_DEUX_POINTS 262
 #define TOK_VIRGULE 263
 #define TOK_POINT_VIRGULE 264
-#define TOK_NOM_ENS 265
-#define TOK_VAL 266
+#define TOK_VAL 265
+#define TOK_NOM_ENS 266
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 13 "projet.y"
+#line 18 "projet.y"
 
     float floatVal;
     int intVal;

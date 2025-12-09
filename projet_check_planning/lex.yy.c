@@ -459,9 +459,14 @@ char *yytext;
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "data.h"
 #include "y.tab.h"
-#line 463 "lex.yy.c"
-#line 464 "lex.yy.c"
+
+/* yylval members used by the lexer */
+extern union YYSTYPE yylval;
+#line 467 "lex.yy.c"
+/* Expressions régulières */
+#line 469 "lex.yy.c"
 
 #define INITIAL 0
 
@@ -678,10 +683,10 @@ YY_DECL
 		}
 
 	{
-#line 15 "projet.l"
+#line 20 "projet.l"
 
 
-#line 684 "lex.yy.c"
+#line 689 "lex.yy.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -740,77 +745,85 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 17 "projet.l"
+#line 22 "projet.l"
 { return TOK_UE; }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 18 "projet.l"
+#line 23 "projet.l"
 { return TOK_CM; }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 19 "projet.l"
+#line 24 "projet.l"
 { return TOK_TD; }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 20 "projet.l"
+#line 25 "projet.l"
 { return TOK_TP; }
 	YY_BREAK
 case 5:
 /* rule 5 can match eol */
 YY_RULE_SETUP
-#line 22 "projet.l"
-{ return TOK_NOM_ENS; }
+#line 27 "projet.l"
+{
+                /* On duplique la chaîne pour la passer à Yacc */
+                yylval.strVal = strdup(yytext);
+                return TOK_NOM_ENS;
+            }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 24 "projet.l"
+#line 33 "projet.l"
 {
-    char *h = strchr(yytext, 'h');
-    if (h) *h = '\0'; 
-    yylval.floatVal = atof(yytext);
-    return TOK_VAL;
-}
+                /* Gérer 'h' optionnel */
+                char tmp[64];
+                strncpy(tmp, yytext, sizeof(tmp)-1);
+                tmp[sizeof(tmp)-1] = '\0';
+                char *h = strchr(tmp, 'h');
+                if (h) *h = '\0';
+                yylval.floatVal = atof(tmp);
+                return TOK_VAL;
+            }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 31 "projet.l"
+#line 44 "projet.l"
 { return TOK_DEUX_POINTS; }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 32 "projet.l"
+#line 45 "projet.l"
 { return TOK_VIRGULE; }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 33 "projet.l"
+#line 46 "projet.l"
 { return TOK_POINT_VIRGULE; }
 	YY_BREAK
 case 10:
 /* rule 10 can match eol */
 YY_RULE_SETUP
-#line 34 "projet.l"
-{ /* Ignorer */ }
+#line 47 "projet.l"
+{ /* Ignorer sauts de ligne */ }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 35 "projet.l"
-{ /* Ignorer */ }
+#line 48 "projet.l"
+{ /* Ignorer espaces */ }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 36 "projet.l"
+#line 50 "projet.l"
 { /* Ignorer caractères inconnus */ }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 38 "projet.l"
+#line 52 "projet.l"
 ECHO;
 	YY_BREAK
-#line 813 "lex.yy.c"
+#line 826 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -1815,5 +1828,6 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 38 "projet.l"
+#line 52 "projet.l"
+
 

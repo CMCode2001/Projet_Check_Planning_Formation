@@ -1,0 +1,40 @@
+UE 1: CM 12h, TD 10h, TP 15h
+UE 2: CM 8h, TD 14h, TP 20h
+UE 3: CM 6h, TD 6h, TP 12h
+UE 4: CM 14h, TD 10h, TP 25h
+UE 5: CM 10h, TD 12h, TP 18h
+UE 6: CM 8h, TD 8h, TP 10h
+UE 7: CM 9h, TD 15h, TP 20h
+UE 8: CM 7h, TD 9h, TP 12h
+UE 9: CM 10h, TD 14h, TP 15h
+UE 10: CM 12h, TD 12h, TP 18h
+
+*Enseignant DIOP*
+UE 1: CM 14h, TD 8h, TP 15h
+UE 2: CM 5h, TD 12h, TP 18h
+UE 5: CM 12h, TD 10h, TP 20h
+;
+
+*Enseignant FALL*
+UE 3: CM 6h, TD 8h, TP 10h
+UE 4: CM 14h, TD 12h, TP 28h
+UE 6: CM 6h, TD 7h, TP 8h
+;
+
+*Vacataire MBOUP*
+UE 2: CM 0h, TD 2h, TP 5h
+UE 5: CM 0h, TD 0h, TP 0h
+UE 7: CM 10h, TD 16h, TP 22h
+;
+
+*Vacataire MBAYE*
+UE 1: CM 0h, TD 5h, TP 0h
+UE 3: CM 0h, TD 0h, TP 0h
+UE 8: CM 7h, TD 10h, TP 12h
+UE 9: CM 12h, TD 14h, TP 15h
+;
+
+*Vacataire NDIAYE*
+UE 10: CM 8h, TD 10h, TP 16h
+UE 6: CM 10h, TD 9h, TP 12h
+;
