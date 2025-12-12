@@ -76,7 +76,9 @@ streamlit run app.py
 
 ## 👥 Auteurs
 `Cheikh Mbacké COLY`
+###
 `Bassirou KANE`
+###
 `Mouhamet DIAGNE`
 ###
 `Promotion Master 2 UIDT - Université Iba Der THIAM de Thiès`
