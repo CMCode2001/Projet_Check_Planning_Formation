@@ -75,8 +75,8 @@ streamlit run app.py
 - `.streamlit/secrets.toml` : Fichier de configuration des secrets (à ne pas partager).
 
 ## 👥 Auteurs
-**Cheikh Mbacké COLY**
-**Bassirou KANE**
-**Mouhamet DIAGNE**
-**Promotion Master 2 UIDT - Université Iba Der THIAM de Thiès**
-*Projet de Compilation*
+`**Cheikh Mbacké COLY**`
+`**Bassirou KANE**`
+`**Mouhamet DIAGNE**`
+`**Promotion Master 2 UIDT - Université Iba Der THIAM de Thiès**`
+`*Projet de Compilation*`
