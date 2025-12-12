@@ -1,9 +1,8 @@
-# Projet_Check_Planning_Formation
+# 🎓 Projet_Check_Planning_Formation
 
 Un outil de vérification automatique de conformité des plannings de formation utilisant **Lex & Yacc (Flex & Bison)** et une interface web **Streamlit**.
 
 ## 📋 Vue d'ensemble
-
 Ce projet analyse des fichiers de planning de formation pour vérifier que :
 
 - ✅ Toutes les heures prévues (CM, TD, TP) pour chaque UE (Unité d'Enseignement) sont assurées
